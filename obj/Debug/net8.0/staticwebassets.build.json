@@ -1,0 +1,58 @@
+{
+  "Version": 1,
+  "Hash": "OLKJ4E6812CSh4nAfs7V+E2n1sEhLJEx2S+I/MM0AJU=",
+  "Source": "WebApplication2",
+  "BasePath": "_content/WebApplication2",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "WebApplication2/wwwroot",
+      "Source": "WebApplication2",
+      "ContentRoot": "/home/kali/Desktop/WebApplication2/WebApplication2/wwwroot/",
+      "BasePath": "_content/WebApplication2",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "/home/kali/Desktop/WebApplication2/WebApplication2/wwwroot/admin.html",
+      "SourceId": "WebApplication2",
+      "SourceType": "Discovered",
+      "ContentRoot": "/home/kali/Desktop/WebApplication2/WebApplication2/wwwroot/",
+      "BasePath": "_content/WebApplication2",
+      "RelativePath": "admin.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/admin.html"
+    },
+    {
+      "Identity": "/home/kali/Desktop/WebApplication2/WebApplication2/wwwroot/register.html",
+      "SourceId": "WebApplication2",
+      "SourceType": "Discovered",
+      "ContentRoot": "/home/kali/Desktop/WebApplication2/WebApplication2/wwwroot/",
+      "BasePath": "_content/WebApplication2",
+      "RelativePath": "register.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot/register.html"
+    }
+  ]
+}
