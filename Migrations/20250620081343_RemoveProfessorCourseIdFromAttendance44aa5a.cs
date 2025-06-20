@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace kalamon_University.Migrations
+namespace WebApplication2.Migrations
 {
     /// <inheritdoc />
-    public partial class University : Migration
+    public partial class RemoveProfessorCourseIdFromAttendance44aa5a : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,6 +52,23 @@ namespace kalamon_University.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Courses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PracticalHours = table.Column<int>(type: "int", nullable: false),
+                    TheoreticalHours = table.Column<int>(type: "int", nullable: false),
+                    TotalHours = table.Column<int>(type: "int", nullable: false),
+                    MaxAbsenceLimit = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Courses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -221,33 +238,32 @@ namespace kalamon_University.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Courses",
+                name: "ProfessorCourses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProfessorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    PracticalHours = table.Column<int>(type: "int", nullable: false),
-                    TheoreticalHours = table.Column<int>(type: "int", nullable: false),
-                    TotalHours = table.Column<int>(type: "int", nullable: false),
-                    MaxAbsenceLimit = table.Column<int>(type: "int", nullable: false),
-                    CourseId = table.Column<int>(type: "int", nullable: true)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfessorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    Practical = table.Column<bool>(type: "bit", nullable: false),
+                    Theoretical = table.Column<bool>(type: "bit", nullable: false),
+                    PracticalN = table.Column<int>(type: "int", nullable: false),
+                    TheoreticalN = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Courses", x => x.Id);
+                    table.PrimaryKey("PK_ProfessorCourses", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Courses_Courses_CourseId",
+                        name: "FK_ProfessorCourses_Courses_CourseId",
                         column: x => x.CourseId,
                         principalTable: "Courses",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Courses_Professors_ProfessorId",
+                        name: "FK_ProfessorCourses_Professors_ProfessorId",
                         column: x => x.ProfessorId,
                         principalTable: "Professors",
                         principalColumn: "UserId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -276,40 +292,9 @@ namespace kalamon_University.Migrations
                         column: x => x.CourseId,
                         principalTable: "Courses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Attendances_Students_StudentId",
-                        column: x => x.StudentId,
-                        principalTable: "Students",
-                        principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Enrollments",
-                columns: table => new
-                {
-                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CourseId = table.Column<int>(type: "int", nullable: false),
-                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Enrollments", x => new { x.StudentId, x.CourseId });
-                    table.ForeignKey(
-                        name: "FK_Enrollments_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Enrollments_Courses_CourseId",
-                        column: x => x.CourseId,
-                        principalTable: "Courses",
-                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Enrollments_Students_StudentId",
+                        name: "FK_Attendances_Students_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Students",
                         principalColumn: "UserId",
@@ -351,14 +336,53 @@ namespace kalamon_University.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Enrollments",
+                columns: table => new
+                {
+                    StudentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfessorCourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsBannedFromExam = table.Column<bool>(type: "bit", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: true),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Enrollments", x => new { x.StudentId, x.ProfessorCourseId });
+                    table.ForeignKey(
+                        name: "FK_Enrollments_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Enrollments_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Enrollments_ProfessorCourses_ProfessorCourseId",
+                        column: x => x.ProfessorCourseId,
+                        principalTable: "ProfessorCourses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Enrollments_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
                 values: new object[,]
                 {
-                    { new Guid("48f0d3ee-2cfc-410d-857a-a705b19b52d5"), null, "Professor", "PROFESSOR" },
-                    { new Guid("b0fab5a7-3080-4253-bc45-f190cdf8db0c"), null, "Student", "STUDENT" },
-                    { new Guid("dee21640-1a17-41fc-8fa3-f00bb5d3917f"), null, "Admin", "ADMIN" }
+                    { new Guid("0729ad92-6450-4eb5-ba7e-a7331c59590e"), null, "Admin", "ADMIN" },
+                    { new Guid("3d74bd3b-1def-4e2c-a6a3-8f15429ae770"), null, "Student", "STUDENT" },
+                    { new Guid("dfbeb566-bbe5-4586-bc68-ecb6aec7dfe8"), null, "Professor", "PROFESSOR" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -416,19 +440,14 @@ namespace kalamon_University.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Courses_CourseId",
-                table: "Courses",
-                column: "CourseId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Courses_ProfessorId",
-                table: "Courses",
-                column: "ProfessorId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_CourseId",
                 table: "Enrollments",
                 column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollments_ProfessorCourseId",
+                table: "Enrollments",
+                column: "ProfessorCourseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_UserId",
@@ -439,6 +458,16 @@ namespace kalamon_University.Migrations
                 name: "IX_Notifications_UserId",
                 table: "Notifications",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfessorCourses_CourseId",
+                table: "ProfessorCourses",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfessorCourses_ProfessorId",
+                table: "ProfessorCourses",
+                column: "ProfessorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Students_UserId",
@@ -496,10 +525,13 @@ namespace kalamon_University.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Courses");
+                name: "ProfessorCourses");
 
             migrationBuilder.DropTable(
                 name: "Students");
+
+            migrationBuilder.DropTable(
+                name: "Courses");
 
             migrationBuilder.DropTable(
                 name: "Professors");

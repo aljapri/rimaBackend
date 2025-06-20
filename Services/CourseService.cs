@@ -77,76 +77,76 @@ namespace kalamon_University.Services
             return ServiceResult.Succeeded("Course deleted successfully.");
         }
 
-        public async Task<ServiceResult<IEnumerable<StudentInCourseDto>>> GetStudentsInCourseAsync(int courseId)
-        {
-            var courseExists = await _context.Courses.AnyAsync(c => c.Id == courseId);
-            if (!courseExists)
-            {
-                return ServiceResult<IEnumerable<StudentInCourseDto>>.Failed("Course not found.");
-            }
+        // public async Task<ServiceResult<IEnumerable<StudentInCourseDto>>> GetStudentsInCourseAsync(int courseId)
+        // {
+        //     var courseExists = await _context.Courses.AnyAsync(c => c.Id == courseId);
+        //     if (!courseExists)
+        //     {
+        //         return ServiceResult<IEnumerable<StudentInCourseDto>>.Failed("Course not found.");
+        //     }
 
-            var students = await _context.Enrollments
-                .Where(e => e.CourseId == courseId)
-                .Include(e => e.Student.User) // تضمين بيانات الطالب ثم المستخدم المرتبط به
-                .Select(e => new StudentInCourseDto
-                {
-                    StudentId = e.StudentId,
-                    // افترض أن لديك FullName أو FirstName و LastName في كائن User
-                    FullName = e.Student.User.FullName, // أو e.Student.User.FirstName + " " + e.Student.User.LastName
-                    Email = e.Student.User.Email,
-                    EnrollmentDate = e.EnrollmentDate
-                })
-                .ToListAsync();
+        //     var students = await _context.Enrollments
+        //         .Where(e => e.CourseId == courseId)
+        //         .Include(e => e.Student.User) // تضمين بيانات الطالب ثم المستخدم المرتبط به
+        //         .Select(e => new StudentInCourseDto
+        //         {
+        //             StudentId = e.StudentId,
+        //             // افترض أن لديك FullName أو FirstName و LastName في كائن User
+        //             FullName = e.Student.User.FullName, // أو e.Student.User.FirstName + " " + e.Student.User.LastName
+        //             Email = e.Student.User.Email,
+        //             EnrollmentDate = e.EnrollmentDate
+        //         })
+        //         .ToListAsync();
 
-            return ServiceResult<IEnumerable<StudentInCourseDto>>.Succeeded(students);
-        }
+        //     return ServiceResult<IEnumerable<StudentInCourseDto>>.Succeeded(students);
+        // }
 
-        public async Task<ServiceResult> EnrollStudentInCourseAsync(EnrollStudentInCourseDto enrollmentDto)
-        {
-            var studentExists = await _context.Users.AnyAsync(u => u.Id == enrollmentDto.StudentId);
-            var courseExists = await _context.Courses.AnyAsync(c => c.Id == enrollmentDto.CourseId);
+        // public async Task<ServiceResult> EnrollStudentInCourseAsync(EnrollStudentInCourseDto enrollmentDto)
+        // {
+        //     var studentExists = await _context.Users.AnyAsync(u => u.Id == enrollmentDto.StudentId);
+        //     var courseExists = await _context.Courses.AnyAsync(c => c.Id == enrollmentDto.CourseId);
 
-            if (!studentExists || !courseExists)
-            {
-                return ServiceResult.Failed("Student or Course not found.");
-            }
+        //     if (!studentExists || !courseExists)
+        //     {
+        //         return ServiceResult.Failed("Student or Course not found.");
+        //     }
 
-            var alreadyEnrolled = await _context.Enrollments
-                .AnyAsync(e => e.StudentId == enrollmentDto.StudentId && e.CourseId == enrollmentDto.CourseId);
+        //     var alreadyEnrolled = await _context.Enrollments
+        //         .AnyAsync(e => e.StudentId == enrollmentDto.StudentId && e.CourseId == enrollmentDto.CourseId);
 
-            if (alreadyEnrolled)
-            {
-                return ServiceResult.Failed("Student is already enrolled in this course.");
-            }
+        //     if (alreadyEnrolled)
+        //     {
+        //         return ServiceResult.Failed("Student is already enrolled in this course.");
+        //     }
 
-            var newEnrollment = new Enrollment
-            {
-                StudentId = enrollmentDto.StudentId,
-                CourseId = enrollmentDto.CourseId,
-                EnrollmentDate = DateTime.UtcNow
-            };
+        //     var newEnrollment = new Enrollment
+        //     {
+        //         StudentId = enrollmentDto.StudentId,
+        //         CourseId = enrollmentDto.CourseId,
+        //         EnrollmentDate = DateTime.UtcNow
+        //     };
 
-            _context.Enrollments.Add(newEnrollment);
-            await _context.SaveChangesAsync();
+        //     _context.Enrollments.Add(newEnrollment);
+        //     await _context.SaveChangesAsync();
 
-            return ServiceResult.Succeeded("Student enrolled successfully.");
-        }
+        //     return ServiceResult.Succeeded("Student enrolled successfully.");
+        // }
 
-        public async Task<ServiceResult> RemoveStudentFromCourseAsync(int courseId, Guid studentId)
-        {
-            var enrollment = await _context.Enrollments
-                .FirstOrDefaultAsync(e => e.CourseId == courseId && e.StudentId == studentId);
+        // public async Task<ServiceResult> RemoveStudentFromCourseAsync(int courseId, Guid studentId)
+        // {
+        //     var enrollment = await _context.Enrollments
+        //         .FirstOrDefaultAsync(e => e.CourseId == courseId && e.StudentId == studentId);
 
-            if (enrollment == null)
-            {
-                return ServiceResult.Failed("Enrollment record not found.");
-            }
+        //     if (enrollment == null)
+        //     {
+        //         return ServiceResult.Failed("Enrollment record not found.");
+        //     }
 
-            _context.Enrollments.Remove(enrollment);
-            await _context.SaveChangesAsync();
+        //     _context.Enrollments.Remove(enrollment);
+        //     await _context.SaveChangesAsync();
 
-            return ServiceResult.Succeeded("Student removed from course successfully.");
-        }
+        //     return ServiceResult.Succeeded("Student removed from course successfully.");
+        // }
 
         public Task<ServiceResult<CourseDetailDto>> CreateCourseAsync(CreateCourseDto courseDto)
         {
@@ -174,6 +174,21 @@ namespace kalamon_University.Services
         }
 
         public Task<ServiceResult<IEnumerable<CourseDetailDto>>> GetCoursesByStudentAsync(Guid studentId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ServiceResult<IEnumerable<StudentInCourseDto>>> GetStudentsInCourseAsync(int courseId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ServiceResult> EnrollStudentInCourseAsync(EnrollStudentInCourseDto enrollmentDto)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ServiceResult> RemoveStudentFromCourseAsync(int courseId, Guid studentId)
         {
             throw new NotImplementedException();
         }

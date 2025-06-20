@@ -62,6 +62,23 @@ namespace kalamon_University.Controllers
 
             return Ok(result);
         }
+        [HttpPost("create-Admin-account")]
+        public async Task<IActionResult> CreateAdminAccount([FromBody] RegisterDto dto)
+        {
+            // تأكد من أن الدور هو أستاذ
+            dto.RoleName = "Admin";
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.RegisterAsync(dto);
+
+            if (!result.Succeeded)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
 
         /// <summary>
         /// جلب كل الأساتذة
@@ -138,6 +155,27 @@ namespace kalamon_University.Controllers
                 return NotFound("الأستاذ غير موجود أو لا يمكن حذفه.");
 
             return Ok("تم حذف الأستاذ بنجاح.");
+        }
+        [HttpGet("professor/{professorId}/professor-courses")]
+        public async Task<IActionResult> GetProfessorCourses(Guid professorId)
+        {
+            var professorCourses = await _context.ProfessorCourses
+                .Where(pc => pc.ProfessorId == professorId)
+                .Include(pc => pc.Course)
+                .ToListAsync();
+
+            var result = professorCourses.Select(pc => new
+            {
+                ProfessorCourseId = pc.Id,
+                CourseId = pc.CourseId,
+                CourseName = pc.Course.Name,
+                Practical = pc.Practical,
+                Theoretical = pc.Theoretical,
+                PracticalN = pc.PracticalN,
+                TheoreticalN = pc.TheoreticalN
+            });
+
+            return Ok(result);
         }
 
         [HttpPost("create-user-account")]
@@ -258,29 +296,66 @@ namespace kalamon_University.Controllers
         [HttpPost("assign-professor-to-course")]
         public async Task<IActionResult> AssignProfessorToCourse([FromBody] AssignProfessorToCourseDto dto)
         {
-            var professor = await _context.Professors.FindAsync(dto.ProfessorId);
+            var professor = await _context.Professors
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == dto.ProfessorId);
+
             var course = await _context.Courses.FindAsync(dto.CourseId);
 
             if (professor == null || course == null)
                 return NotFound("Professor or Course not found.");
 
-            var exists = await _context.ProfessorCourses
-                .AnyAsync(pc => pc.ProfessorId == dto.ProfessorId && pc.CourseId == dto.CourseId);
+            // تحقق من أن هناك نوع واحد على الأقل مُحدد مع عدد حصص أكبر من صفر
+            if ((!dto.Practical && !dto.Theoretical) ||
+                (dto.Practical && dto.PracticalN <= 0) ||
+                (dto.Theoretical && dto.TheoreticalN <= 0))
+            {
+                return BadRequest("يجب اختيار نوع واحد على الأقل (عملي أو نظري) مع عدد حصص صالح.");
+            }
 
-            if (exists)
-                return BadRequest("This professor is already assigned to the course.");
+            // استعلام التعيينات الحالية لنفس الأستاذ ونفس الكورس
+            var existingAssignments = await _context.ProfessorCourses
+                .Where(pc => pc.ProfessorId == dto.ProfessorId && pc.CourseId == dto.CourseId)
+                .ToListAsync();
 
+            // تحقق من وجود تعيين بنفس عدد الحصص العملية
+            bool hasSamePractical = dto.Practical &&
+                existingAssignments.Any(a => a.Practical && a.PracticalN == dto.PracticalN);
+
+            // تحقق من وجود تعيين بنفس عدد الحصص النظرية
+            bool hasSameTheoretical = dto.Theoretical &&
+                existingAssignments.Any(a => a.Theoretical && a.TheoreticalN == dto.TheoreticalN);
+
+            // رفض التعيين إذا تكررت نفس عدد الحصص
+            if (hasSamePractical || hasSameTheoretical)
+            {
+                return BadRequest("لا يمكن تعيين الأستاذ بنفس عدد الحصص العملية أو النظرية.");
+            }
+
+            // إنشاء سجل التعيين
             var professorCourse = new ProfessorCourse
             {
                 ProfessorId = dto.ProfessorId,
-                CourseId = dto.CourseId
+                CourseId = dto.CourseId,
+                Practical = dto.Practical,
+                Theoretical = dto.Theoretical,
+                PracticalN = dto.Practical ? dto.PracticalN : 0,
+                TheoreticalN = dto.Theoretical ? dto.TheoreticalN : 0
             };
 
-            await _context.ProfessorCourses.AddAsync(professorCourse);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.ProfessorCourses.AddAsync(professorCourse);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"حدث خطأ أثناء حفظ البيانات: {ex.Message}");
+            }
 
-            return Ok("Professor assigned to course successfully.");
+            return Ok("تم تعيين الأستاذ للمقرر بنجاح.");
         }
+
         // جلب كل الكورسات مع بيانات الأساتذة المعينين (اختياري)
         [HttpGet("courses")]
         public async Task<IActionResult> GetAllCourses()
@@ -309,67 +384,9 @@ namespace kalamon_University.Controllers
 
             return Ok(result);
         }
-        [HttpPost("assign-student-to-course")]
-        public async Task<IActionResult> AssignStudentToCourse([FromBody] AssignStudentToCourseDto dto)
-        {
-            // تحقق من صحة البيانات
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
-            // تحقق من وجود الطالب
-            var student = await _context.Students.FindAsync(dto.StudentId);
-            if (student == null)
-                return NotFound("الطالب غير موجود.");
 
-            // تحقق من وجود الكورس
-            var course = await _context.Courses.FindAsync(dto.CourseId);
-            if (course == null)
-                return NotFound("الكورس غير موجود.");
 
-            // تحقق إذا الطالب مسجل مسبقاً في هذا الكورس
-            var existingEnrollment = await _context.Enrollments
-                .FirstOrDefaultAsync(e => e.StudentId == dto.StudentId && e.CourseId == dto.CourseId);
-
-            if (existingEnrollment != null)
-                return BadRequest("الطالب مسجل بالفعل في هذا الكورس.");
-
-            // أنشئ تسجيل الطالب في الكورس
-            var enrollment = new Enrollment
-            {
-                StudentId = dto.StudentId,
-                CourseId = dto.CourseId,
-                EnrollmentDate = DateTime.UtcNow // إذا كان لديك هذا الحقل
-            };
-
-            _context.Enrollments.Add(enrollment);
-            await _context.SaveChangesAsync();
-
-            return Ok("تم تعيين الطالب إلى الكورس بنجاح.");
-        }
-        [HttpGet("course/{courseId}/students")]
-        public async Task<IActionResult> GetStudentsByCourse(int courseId)
-        {
-            // تحقق من وجود الكورس
-            var courseExists = await _context.Courses.AnyAsync(c => c.Id == courseId);
-            if (!courseExists)
-                return NotFound("الكورس غير موجود.");
-
-            // جلب الطلاب المسجلين في الكورس مع بياناتهم الأساسية
-            var students = await _context.Enrollments
-                .Where(e => e.CourseId == courseId)
-                .Include(e => e.Student)
-                    .ThenInclude(s => s.User) // لجلب بيانات المستخدم المرتبط بالطالب
-                .Select(e => new
-                {
-                    StudentId = e.StudentId,
-                    FullName = e.Student.User.FullName,
-                    Email = e.Student.User.Email,
-                    UserName = e.Student.User.UserName
-                })
-                .ToListAsync();
-
-            return Ok(students);
-        }
         [HttpGet("professor/{professorId}/courses")]
         public async Task<IActionResult> GetCoursesByProfessor(Guid professorId)
         {
@@ -392,62 +409,6 @@ namespace kalamon_University.Controllers
 
             return Ok(courses);
         }
-        [HttpGet("student/{studentId}/courses")]
-        public async Task<IActionResult> GetCoursesForStudent(Guid studentId)
-        {
-            var student = await _context.Students
-                .Include(s => s.Enrollments)
-                    .ThenInclude(e => e.Course)
-                .FirstOrDefaultAsync(s => s.UserId == studentId);
-
-            if (student == null)
-                return NotFound("الطالب غير موجود.");
-
-            var courses = student.Enrollments.Select(e => new
-            {
-                CourseId = e.Course.Id,
-                e.Course.Name,
-                e.Course.PracticalHours,
-                e.Course.TheoreticalHours,
-                e.Course.TotalHours
-            });
-
-            return Ok(courses);
-        }
-        [HttpGet("professor/{professorId}/students")]
-        public async Task<IActionResult> GetStudentsForProfessor(Guid professorId)
-        {
-            var professor = await _context.Professors
-                .Include(p => p.ProfessorCourses)
-                    .ThenInclude(pc => pc.Course)
-                        .ThenInclude(c => c.Enrollments)
-                            .ThenInclude(e => e.Student)
-                                .ThenInclude(s => s.User)
-                .FirstOrDefaultAsync(p => p.UserId == professorId);
-
-            if (professor == null)
-                return NotFound("الأستاذ غير موجود.");
-
-            var students = professor.ProfessorCourses
-                .SelectMany(pc => pc.Course.Enrollments)
-                .Select(e => new
-                {
-                    StudentId = e.Student.UserId,
-                    e.Student.User.FullName,
-                    e.Student.User.Email,
-                    e.Student.User.UserName,
-                    CourseName = e.Course.Name
-                })
-                .Distinct()
-                .ToList();
-
-            return Ok(students);
-        }
-
-
-
-
-
 
     }
 
@@ -473,10 +434,15 @@ namespace kalamon_University.Controllers
     {
         public Guid ProfessorId { get; set; }
         public int CourseId { get; set; }
+        public bool Practical { get; set; }
+        public bool Theoretical { get; set; }
+        public int PracticalN { get; set; } = 0;
+        public int TheoreticalN { get; set; } = 0;
     }
-    public class AssignStudentToCourseDto
+    public class AssignStudentToProfessorCourseDto
     {
         public Guid StudentId { get; set; }
-        public int CourseId { get; set; }
+        public Guid ProfessorCourseId { get; set; }
     }
+
 }

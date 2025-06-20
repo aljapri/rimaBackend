@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using kalamon_University.Models.Entities;
 using System;
+using WebApplication2;
 
 namespace kalamon_University.Data
 {
@@ -16,34 +17,34 @@ namespace kalamon_University.Data
         public DbSet<Course> Courses { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
-        public DbSet<Attendance> Attendances { get; set; }
+        public DbSet<Attendance> Attendances { get; set; }  // Make sure this is present!
         public DbSet<Warning> Warnings { get; set; }
-        public DbSet<ProfessorCourse> ProfessorCourses { get; set; } // ✅ added
+        public DbSet<ProfessorCourse> ProfessorCourses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // ---- Enrollment (Student <-> Course) ----
+            // Enrollment keys & relationships
             builder.Entity<Enrollment>(entity =>
             {
-                entity.HasKey(e => new { e.StudentId, e.CourseId });
+                entity.HasKey(e => new { e.StudentId, e.ProfessorCourseId });
 
                 entity.HasOne(e => e.Student)
                       .WithMany(s => s.Enrollments)
                       .HasForeignKey(e => e.StudentId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(e => e.Course)
-                      .WithMany(c => c.Enrollments)
-                      .HasForeignKey(e => e.CourseId)
+                entity.HasOne(e => e.ProfessorCourse)
+                      .WithMany(pc => pc.Enrollments)
+                      .HasForeignKey(e => e.ProfessorCourseId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // ---- ProfessorCourse (Many-to-Many: Professor <-> Course) ----
+            // ProfessorCourse relationship
             builder.Entity<ProfessorCourse>(entity =>
             {
-                entity.HasKey(pc => new { pc.ProfessorId, pc.CourseId });
+                entity.HasKey(pc => pc.Id);
 
                 entity.HasOne(pc => pc.Professor)
                       .WithMany(p => p.ProfessorCourses)
@@ -56,7 +57,7 @@ namespace kalamon_University.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // ---- One-to-One: User <-> Student ----
+            // User to Student & Professor profiles one-to-one
             builder.Entity<User>()
                 .HasOne(u => u.StudentProfile)
                 .WithOne(s => s.User)
@@ -72,26 +73,26 @@ namespace kalamon_University.Data
                 entity.HasIndex(s => s.UserId).IsUnique();
             });
 
-            // ---- Enum Conversion ----
+            // Warning enum conversion
             builder.Entity<Warning>()
                 .Property(w => w.Type)
                 .HasConversion<string>();
 
-            // ---- Attendance ----
-            builder.Entity<Attendance>(entity =>
-            {
-                entity.HasOne(a => a.Student)
-                      .WithMany(s => s.Attendances)
-                      .HasForeignKey(a => a.StudentId)
-                      .OnDelete(DeleteBehavior.Cascade);
+            // *** Attendance relations - Use Restrict on all FKs to avoid multiple cascade paths ***
+builder.Entity<Attendance>(entity =>
+{
+    entity.HasOne(a => a.Student)
+          .WithMany(s => s.Attendances)
+          .HasForeignKey(a => a.StudentId)
+          .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(a => a.Course)
-                      .WithMany(c => c.Attendances)
-                      .HasForeignKey(a => a.CourseId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+    entity.HasOne(a => a.ProfessorCourse)
+          .WithMany()
+          .HasForeignKey(a => a.ProfessorCourseId)
+          .OnDelete(DeleteBehavior.Restrict);
+});
 
-            // ---- Warning ----
+            // Warning relations
             builder.Entity<Warning>(entity =>
             {
                 entity.HasOne(w => w.Student)
@@ -105,7 +106,7 @@ namespace kalamon_University.Data
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // ---- Notification ----
+            // Notification relations
             builder.Entity<Notification>(entity =>
             {
                 entity.HasOne(n => n.TargetUser)
@@ -115,7 +116,7 @@ namespace kalamon_University.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // ---- Role Seeding ----
+            // Roles seeding example
             var adminRoleId = Guid.NewGuid();
             var professorRoleId = Guid.NewGuid();
             var studentRoleId = Guid.NewGuid();

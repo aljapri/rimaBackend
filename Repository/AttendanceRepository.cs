@@ -18,38 +18,73 @@ namespace kalamon_University.Repository
             _context = context;
         }
 
-        public async Task AddAsync(Attendance attendance)
+        public Task AddAsync(Attendance attendance)
         {
-            await _context.Attendances.AddAsync(attendance);
+            throw new NotImplementedException();
         }
 
-        public async Task<bool> HasAttendanceRecordAsync(Guid studentId, int courseId, DateTime sessionDate)
+        public Task<int> GetAbsenceCountForStudentAsync(Guid studentId, int courseId)
         {
-            // تحقق إذا كان هناك سجل لنفس الطالب في نفس المقرر في نفس اليوم
-            return await _context.Attendances
-                .AnyAsync(a => a.StudentId == studentId &&
-                               a.CourseId == courseId &&
-                               a.SessionDate.Date == sessionDate.Date);
+            throw new NotImplementedException();
         }
 
-        public async Task SaveChangesAsync()
+        public Task<IEnumerable<Attendance>> GetAttendanceForStudentInCourseAsync(Guid studentId, int courseId)
         {
-            await _context.SaveChangesAsync();
+            throw new NotImplementedException();
         }
-        // In: Repository/AttendanceRepository.cs
-        public async Task<int> GetAbsenceCountForStudentAsync(Guid studentId, int courseId)
+
+        // public async Task AddAsync(Attendance attendance)
+        // {
+        //     await _context.Attendances.AddAsync(attendance);
+        // }
+
+        // public Task<int> GetAbsenceCountForStudentAsync(Guid studentId, int courseId)
+        // {
+        //     throw new NotImplementedException();
+        // }
+
+        // public Task<IEnumerable<Attendance>> GetAttendanceForStudentInCourseAsync(Guid studentId, int courseId)
+        // {
+        //     throw new NotImplementedException();
+        // }
+
+        // public async Task<bool> HasAttendanceRecordAsync(Guid studentId, int courseId, DateTime sessionDate)
+        // {
+        //     // تحقق إذا كان هناك سجل لنفس الطالب في نفس المقرر في نفس اليوم
+        //     return await _context.Attendances
+        //         .AnyAsync(a => a.StudentId == studentId &&
+        //                        a.CourseId == courseId &&
+        //                        a.SessionDate.Date == sessionDate.Date);
+        // }
+
+        // public async Task SaveChangesAsync()
+        // {
+        //     await _context.SaveChangesAsync();
+        // }
+        // // In: Repository/AttendanceRepository.cs
+        // public async Task<int> GetAbsenceCountForStudentAsync(Guid studentId, int courseId)
+        // {
+        //     return await _context.Attendances
+        //         .CountAsync(a => a.StudentId == studentId &&
+        //                          a.CourseId == courseId &&
+        //                          a.IsPresent == false); // نعد فقط السجلات التي يكون فيها الطالب غائباً
+        // // }
+        // public async Task<IEnumerable<Attendance>> GetAttendanceForStudentInCourseAsync(Guid studentId, int courseId)
+        // {
+        //     return await _context.Attendances
+        //                          .Where(a => a.StudentId == studentId && a.CourseId == courseId)
+        //                          .OrderByDescending(a => a.SessionDate) // ترتيبها حسب التاريخ
+        //                          .ToListAsync();
+        // }
+
+        public Task<bool> HasAttendanceRecordAsync(Guid studentId, int courseId, DateTime sessionDate)
         {
-            return await _context.Attendances
-                .CountAsync(a => a.StudentId == studentId &&
-                                 a.CourseId == courseId &&
-                                 a.IsPresent == false); // نعد فقط السجلات التي يكون فيها الطالب غائباً
+            throw new NotImplementedException();
         }
-        public async Task<IEnumerable<Attendance>> GetAttendanceForStudentInCourseAsync(Guid studentId, int courseId)
+
+        public Task SaveChangesAsync()
         {
-            return await _context.Attendances
-                                 .Where(a => a.StudentId == studentId && a.CourseId == courseId)
-                                 .OrderByDescending(a => a.SessionDate) // ترتيبها حسب التاريخ
-                                 .ToListAsync();
+            throw new NotImplementedException();
         }
     }
 }

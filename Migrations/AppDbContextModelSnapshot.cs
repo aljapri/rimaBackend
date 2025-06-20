@@ -8,7 +8,7 @@ using kalamon_University.Data;
 
 #nullable disable
 
-namespace kalamon_University.Migrations
+namespace WebApplication2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -52,19 +52,19 @@ namespace kalamon_University.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("98cfdf11-9338-464b-b843-1e3b93bcf899"),
+                            Id = new Guid("1924ca37-d38a-4bbc-ae1d-5a7f0cf4618a"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("33208edf-2317-434e-8a29-46b426632058"),
+                            Id = new Guid("8a16fd55-9ee0-4842-9a38-849cb0c21e97"),
                             Name = "Professor",
                             NormalizedName = "PROFESSOR"
                         },
                         new
                         {
-                            Id = new Guid("5be74b8f-f0c2-472f-b8f8-0f1af5e8a34f"),
+                            Id = new Guid("1f3e412a-1ada-4aa4-b50a-efd8feef26df"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         });
@@ -190,6 +190,9 @@ namespace kalamon_University.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("ProfessorCourseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("SessionDate")
                         .HasColumnType("datetime2");
 
@@ -202,6 +205,8 @@ namespace kalamon_University.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("ProfessorCourseId");
 
                     b.HasIndex("StudentId");
 
@@ -245,11 +250,17 @@ namespace kalamon_University.Migrations
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CourseId")
+                    b.Property<Guid>("ProfessorCourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("CourseId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("EnrollmentDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsBannedFromExam")
                         .HasColumnType("bit");
@@ -257,9 +268,11 @@ namespace kalamon_University.Migrations
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("StudentId", "CourseId");
+                    b.HasKey("StudentId", "ProfessorCourseId");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("ProfessorCourseId");
 
                     b.HasIndex("UserId");
 
@@ -320,15 +333,33 @@ namespace kalamon_University.Migrations
 
             modelBuilder.Entity("kalamon_University.Models.Entities.ProfessorCourse", b =>
                 {
-                    b.Property<Guid>("ProfessorId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("CourseId")
                         .HasColumnType("int");
 
-                    b.HasKey("ProfessorId", "CourseId");
+                    b.Property<bool>("Practical")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PracticalN")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProfessorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Theoretical")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TheoreticalN")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("ProfessorId");
 
                     b.ToTable("ProfessorCourses");
                 });
@@ -519,10 +550,16 @@ namespace kalamon_University.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("kalamon_University.Models.Entities.ProfessorCourse", "ProfessorCourse")
+                        .WithMany()
+                        .HasForeignKey("ProfessorCourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("kalamon_University.Models.Entities.Student", "Student")
                         .WithMany("Attendances")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("kalamon_University.Models.Entities.User", null)
@@ -530,15 +567,21 @@ namespace kalamon_University.Migrations
                         .HasForeignKey("UserId");
 
                     b.Navigation("Course");
+
+                    b.Navigation("ProfessorCourse");
 
                     b.Navigation("Student");
                 });
 
             modelBuilder.Entity("kalamon_University.Models.Entities.Enrollment", b =>
                 {
-                    b.HasOne("kalamon_University.Models.Entities.Course", "Course")
+                    b.HasOne("kalamon_University.Models.Entities.Course", null)
                         .WithMany("Enrollments")
-                        .HasForeignKey("CourseId")
+                        .HasForeignKey("CourseId");
+
+                    b.HasOne("kalamon_University.Models.Entities.ProfessorCourse", "ProfessorCourse")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("ProfessorCourseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -552,7 +595,7 @@ namespace kalamon_University.Migrations
                         .WithMany("Enrollments")
                         .HasForeignKey("UserId");
 
-                    b.Navigation("Course");
+                    b.Navigation("ProfessorCourse");
 
                     b.Navigation("Student");
                 });
@@ -648,6 +691,11 @@ namespace kalamon_University.Migrations
             modelBuilder.Entity("kalamon_University.Models.Entities.Professor", b =>
                 {
                     b.Navigation("ProfessorCourses");
+                });
+
+            modelBuilder.Entity("kalamon_University.Models.Entities.ProfessorCourse", b =>
+                {
+                    b.Navigation("Enrollments");
                 });
 
             modelBuilder.Entity("kalamon_University.Models.Entities.Student", b =>

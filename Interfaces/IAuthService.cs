@@ -1,6 +1,6 @@
 // kalamon_University.Interfaces.IAuthService.cs
 using System.Threading.Tasks;
-using kalamon_University.DTOs.Auth; // áÜ RegisterDto, LoginDto, AuthResultDto
+using kalamon_University.DTOs.Auth; // ï¿½ï¿½ RegisterDto, LoginDto, AuthResultDto
 
 namespace kalamon_University.Interfaces
 {
@@ -10,7 +10,7 @@ namespace kalamon_University.Interfaces
         /// Registers a new user (Student or Professor) by an admin or self-registration.
         /// Creates the IdentityUser and the associated Student/Professor profile.
         /// </summary>
-        Task<AuthResultDto> RegisterAsync(RegisterDto model); // RoleName, StudentIdNumber/StaffIdNumber Êßæä Öãä RegisterDto
+        Task<AuthResultDto> RegisterAsync(RegisterDto model); // RoleName, StudentIdNumber/StaffIdNumber ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ RegisterDto
 
         /// <summary>
         /// Logs in an existing user.

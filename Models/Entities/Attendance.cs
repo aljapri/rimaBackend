@@ -13,8 +13,9 @@ namespace kalamon_University.Models.Entities
         public Guid StudentId { get; set; }
         public virtual Student Student { get; set; } = null!;
 
-        [ForeignKey("Course")]
-        public int CourseId { get; set; }
+        public Guid ProfessorCourseId { get; set; }
+        public virtual ProfessorCourse ProfessorCourse { get; set; } = null!;
+
         public virtual Course Course { get; set; } = null!;
 
         public DateTime SessionDate { get; set; } = DateTime.UtcNow;

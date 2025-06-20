@@ -326,3 +326,4 @@
 /home/kali/Desktop/WebApplication2/WebApplication2/obj/Debug/net8.0/WebApplication2.pdb
 /home/kali/Desktop/WebApplication2/WebApplication2/obj/Debug/net8.0/WebApplication2.genruntimeconfig.cache
 /home/kali/Desktop/WebApplication2/WebApplication2/obj/Debug/net8.0/ref/WebApplication2.dll
+/home/kali/Desktop/WebApplication2/WebApplication2/obj/Debug/net8.0/WebApplication2.sourcelink.json
