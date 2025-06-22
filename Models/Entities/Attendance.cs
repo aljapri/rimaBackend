@@ -20,7 +20,9 @@ namespace kalamon_University.Models.Entities
 
         public DateTime SessionDate { get; set; } = DateTime.UtcNow;
 
+
         public bool IsPresent { get; set; }
+        
 
         public string? Notes { get; set; }
     }

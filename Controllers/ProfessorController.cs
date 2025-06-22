@@ -145,63 +145,138 @@ namespace WebApplication2.Controllers
             return Ok(courses);
         }
 
-        [HttpGet("Student/{studentId}/attendance-summary")]
-        public async Task<IActionResult> GetAttendanceSummary(Guid studentId)
+
+
+
+
+
+
+
+
+
+[HttpGet("Student/{studentId}/attendance-summary")]
+public async Task<IActionResult> GetAttendanceSummary(Guid studentId)
+{
+    var student = await _context.Students
+        .Include(s => s.User)
+        .FirstOrDefaultAsync(s => s.UserId == studentId);
+
+    if (student == null)
+        return NotFound("الطالب غير موجود.");
+
+    var enrollments = await _context.Enrollments
+        .Where(e => e.StudentId == studentId)
+        .Include(e => e.ProfessorCourse)
+            .ThenInclude(pc => pc.Course)
+        .ToListAsync();
+
+    if (!enrollments.Any())
+        return NotFound("الطالب غير مسجل في أي كورس.");
+
+    var professorCourseIds = enrollments.Select(e => e.ProfessorCourseId).ToList();
+
+    var absences = await _context.Attendances
+        .Where(a => a.StudentId == studentId && professorCourseIds.Contains(a.ProfessorCourseId) && !a.IsPresent)
+        .ToListAsync();
+
+    var groupedByCourse = enrollments.GroupBy(e => e.ProfessorCourse.Course).ToList();
+
+    var results = new List<object>();
+
+    foreach (var group in groupedByCourse)
+    {
+        var course = group.Key;
+        int fullAttendance = course.fullAttendance;
+
+        int totalPracticalAbsence = 0;
+        int totalTheoreticalAbsence = 0;
+        List<string> courseParts = new();
+
+        foreach (var enrollment in group)
         {
-            var student = await _context.Students
-                .Include(s => s.User)
-                .FirstOrDefaultAsync(s => s.UserId == studentId);
+            var pc = enrollment.ProfessorCourse;
+            var absencesForPc = absences.Where(a => a.ProfessorCourseId == pc.Id).ToList();
 
-            if (student == null)
-                return NotFound("الطالب غير موجود.");
+            if (pc.Practical && !pc.Theoretical)
+            {
+                int count = absencesForPc.Count;
+                totalPracticalAbsence += count;
+                double percent = fullAttendance > 0 ? (double)count / fullAttendance : 0;
+                courseParts.Add($"{course.Name} (عملي): {percent:P1}");
+            }
+            else if (!pc.Practical && pc.Theoretical)
+            {
+                int count = absencesForPc.Count;
+                totalTheoreticalAbsence += count;
+                double percent = fullAttendance > 0 ? (double)count / fullAttendance : 0;
+                courseParts.Add($"{course.Name} (نظري): {percent:P1}");
+            }
+            else
+            {
+                int practical = absencesForPc.Count(a => a.Notes?.Contains("عملي") ?? false);
+                int theoretical = absencesForPc.Count(a => a.Notes?.Contains("نظري") ?? false);
+                totalPracticalAbsence += practical;
+                totalTheoreticalAbsence += theoretical;
 
-            var enrollments = await _context.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Include(e => e.ProfessorCourse)
-                    .ThenInclude(pc => pc.Course)
-                .ToListAsync();
+                double practicalPercent = fullAttendance > 0 ? (double)practical / fullAttendance : 0;
+                double theoreticalPercent = fullAttendance > 0 ? (double)theoretical / fullAttendance : 0;
 
-            var attendanceGroups = enrollments
-                .GroupBy(e => new
-                {
-                    CourseId = e.ProfessorCourse.Course.Id,
-                    CourseName = e.ProfessorCourse.Course.Name,
-                    MaxAllowed = e.ProfessorCourse.Course.MaxAbsenceLimit
-                })
-                .Select(async group =>
-                {
-                    int totalAbsence = 0;
-
-                    foreach (var e in group)
-                    {
-                        int count = await _context.Attendances
-                            .Where(a => a.StudentId == studentId
-                                        && a.ProfessorCourseId == e.ProfessorCourseId
-                                        && !a.IsPresent)
-                            .CountAsync();
-                        totalAbsence += count;
-                    }
-
-                    string status = totalAbsence > group.Key.MaxAllowed
-                        ? "ممنوع من التقديم"
-                        : totalAbsence == group.Key.MaxAllowed
-                            ? "تحذير: وصلت للحد المسموح"
-                            : "منتظم";
-
-                    return new
-                    {
-                        group.Key.CourseId,
-                        group.Key.CourseName,
-                        group.Key.MaxAllowed,
-                        AbsenceCount = totalAbsence,
-                        Status = status
-                    };
-                });
-
-            var result = await Task.WhenAll(attendanceGroups);
-
-            return Ok(result);
+                courseParts.Add($"{course.Name} (عملي): {practicalPercent:P1}");
+                courseParts.Add($"{course.Name} (نظري): {theoreticalPercent:P1}");
+            }
         }
+
+        double practicalAbsencePercentage = fullAttendance > 0 ? (double)totalPracticalAbsence / fullAttendance : 0;
+        double theoreticalAbsencePercentage = fullAttendance > 0 ? (double)totalTheoreticalAbsence / fullAttendance : 0;
+        double totalAbsencePercentage = practicalAbsencePercentage + theoreticalAbsencePercentage;
+
+        double allowedPracticalPercentage = course.MaxAbsenceLimitPractical / 100.0;
+        double allowedTheoreticalPercentage = course.MaxAbsenceLimitTheoretical / 100.0;
+        double allowedTotalPercentage = allowedPracticalPercentage + allowedTheoreticalPercentage;
+
+        string status = totalAbsencePercentage > allowedTotalPercentage ? "محروم"
+                       : totalAbsencePercentage == allowedTotalPercentage ? "تحذير"
+                       : "منتظم";
+
+        results.Add(new
+        {
+            courseId = course.Id,
+            course.Name,
+            course.fullAttendance,
+            course.PracticalHours,
+            course.TheoreticalHours,
+            course.MaxAbsenceLimitPractical,
+            course.MaxAbsenceLimitTheoretical,
+
+            practicalAbsenceCount = totalPracticalAbsence,
+            theoreticalAbsenceCount = totalTheoreticalAbsence,
+            totalAbsences = totalPracticalAbsence + totalTheoreticalAbsence,
+
+            practicalAbsencePercentage = $"{practicalAbsencePercentage:P1}",
+            theoreticalAbsencePercentage = $"{theoreticalAbsencePercentage:P1}",
+            totalAbsencePercentage = $"{totalAbsencePercentage:P1}",
+
+            allowedPracticalPercentage = $"{allowedPracticalPercentage:P1}",
+            allowedTheoreticalPercentage = $"{allowedTheoreticalPercentage:P1}",
+            allowedTotalPercentage = $"{allowedTotalPercentage:P1}",
+
+            status,
+            attendanceDetails = courseParts
+        });
+    }
+
+    return Ok(results);
+}
+
+
+
+
+
+        
+
+
+
+
 
 
 
@@ -285,6 +360,7 @@ namespace WebApplication2.Controllers
                 .Include(pc => pc.Course)
                 .FirstOrDefaultAsync(pc => pc.Id == professorCourseId);
 
+            Console.WriteLine(professorCourse);
             if (professorCourse == null)
                 return NotFound("الكورس غير موجود.");
 
@@ -326,6 +402,150 @@ namespace WebApplication2.Controllers
 
             return Ok(result);
         }
+        [HttpGet("professor-course/{professorCourseId}")]
+        public async Task<IActionResult> GetProfessorCourseDetails(Guid professorCourseId)
+        {
+            var professorCourse = await _context.ProfessorCourses
+                .Include(pc => pc.Course)
+                .FirstOrDefaultAsync(pc => pc.Id == professorCourseId);
+
+            if (professorCourse == null)
+                return NotFound("الكورس للأستاذ غير موجود.");
+
+            return Ok(new
+            {
+                professorCourse.Id,
+                professorCourse.ProfessorId,
+                CourseId = professorCourse.Course.Id,
+                CourseName = professorCourse.Course.Name,
+                Practical = professorCourse.Practical,
+                Theoretical = professorCourse.Theoretical,
+                CourseFullAttendance = professorCourse.Course.fullAttendance,
+                MaxAbsenceLimitPractical = professorCourse.Course.MaxAbsenceLimitPractical,
+                MaxAbsenceLimitTheoretical = professorCourse.Course.MaxAbsenceLimitTheoretical,
+                // أضف أي خصائص أخرى تريدها
+            });
+        }
+
+       [HttpGet("course/{courseId}/absence-violators")]
+public async Task<IActionResult> GetAbsenceViolatorsForCourses(int courseId)
+{
+    var professorCourses = await _context.ProfessorCourses
+        .Where(pc => pc.CourseId == courseId)
+        .Include(pc => pc.Course)
+        .ToListAsync();
+
+    if (!professorCourses.Any())
+        return NotFound("لا يوجد كورسات مرتبطة بهذا المقرر.");
+
+    var course = professorCourses.First().Course;
+    int fullAttendance = course.fullAttendance;
+
+    // النسب المسموح بها كنسبة عشرية (مثلاً 7% = 0.07)
+    double allowedRatioPractical = course.MaxAbsenceLimitPractical / 100.0;
+    double allowedRatioTheoretical = course.MaxAbsenceLimitTheoretical / 100.0;
+    double totalAllowedRatio = allowedRatioPractical + allowedRatioTheoretical;
+
+    var enrollments = await _context.Enrollments
+        .Where(e => professorCourses.Select(pc => pc.Id).Contains(e.ProfessorCourseId))
+        .Include(e => e.Student).ThenInclude(s => s.User)
+        .Include(e => e.ProfessorCourse)
+        .ToListAsync();
+
+    var grouped = enrollments
+        .GroupBy(e => new { e.StudentId, e.Student.User.FullName })
+        .ToList();
+
+    var results = new List<object>();
+
+    foreach (var group in grouped)
+    {
+        int totalPracticalAbsence = 0;
+        int totalTheoreticalAbsence = 0;
+        List<string> courseParts = new();
+
+        foreach (var e in group)
+        {
+            var pc = e.ProfessorCourse;
+            var absences = await _context.Attendances
+                .Where(a => a.StudentId == e.StudentId &&
+                            a.ProfessorCourseId == pc.Id &&
+                            !a.IsPresent)
+                .ToListAsync();
+
+            if (pc.Practical && !pc.Theoretical)
+            {
+                int practicalCount = absences.Count;
+                totalPracticalAbsence += practicalCount;
+                double practicalRatio = fullAttendance > 0 ? (double)practicalCount / fullAttendance : 0;
+                courseParts.Add($"{course.Name} (عملي): {practicalRatio:P1}");
+            }
+            else if (!pc.Practical && pc.Theoretical)
+            {
+                int theoreticalCount = absences.Count;
+                totalTheoreticalAbsence += theoreticalCount;
+                double theoreticalRatio = fullAttendance > 0 ? (double)theoreticalCount / fullAttendance : 0;
+                courseParts.Add($"{course.Name} (نظري): {theoreticalRatio:P1}");
+            }
+            else
+            {
+                int practical = absences.Count(a => a.Notes?.Contains("عملي") ?? false);
+                int theoretical = absences.Count(a => a.Notes?.Contains("نظري") ?? false);
+                totalPracticalAbsence += practical;
+                totalTheoreticalAbsence += theoretical;
+
+                double practicalRatio = fullAttendance > 0 ? (double)practical / fullAttendance : 0;
+                double theoreticalRatio = fullAttendance > 0 ? (double)theoretical / fullAttendance : 0;
+
+                courseParts.Add($"{course.Name} (نظري: {theoreticalRatio:P1} + عملي: {practicalRatio:P1})");
+            }
+        }
+
+        int totalAbsencesCount = totalPracticalAbsence + totalTheoreticalAbsence;
+
+        double practicalAbsenceRatio = fullAttendance > 0 ? (double)totalPracticalAbsence / fullAttendance : 0;
+        double theoreticalAbsenceRatio = fullAttendance > 0 ? (double)totalTheoreticalAbsence / fullAttendance : 0;
+        double totalAbsenceRatio = practicalAbsenceRatio + theoreticalAbsenceRatio;
+
+        string status = totalAbsenceRatio > totalAllowedRatio ? "محروم"
+                        : totalAbsenceRatio == totalAllowedRatio ? "تحذير"
+                        : "منتظم";
+
+        if (status == "محروم")
+        {
+            results.Add(new
+            {
+                group.Key.StudentId,
+                group.Key.FullName,
+
+                PracticalAbsenceCount = totalPracticalAbsence,
+                TheoreticalAbsenceCount = totalTheoreticalAbsence,
+                TotalAbsencesCount = totalAbsencesCount,
+
+                PracticalAbsencePercentage = $"{practicalAbsenceRatio:P1}",
+                TheoreticalAbsencePercentage = $"{theoreticalAbsenceRatio:P1}",
+                TotalAbsencePercentage = $"{totalAbsenceRatio:P1}",
+
+                AllowedPracticalPercentage = $"{allowedRatioPractical:P1}",
+                AllowedTheoreticalPercentage = $"{allowedRatioTheoretical:P1}",
+                AllowedTotalPercentage = $"{totalAllowedRatio:P1}",
+
+                Status = status,
+                courses = courseParts
+            });
+        }
+    }
+
+    return Ok(results);
+}
+
+
+
+
+
+
+
+
 
 
 

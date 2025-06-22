@@ -25,9 +25,17 @@ namespace kalamon_University.Models.Entities
         [Range(1, 20)]
         public int MaxAbsenceLimit { get; set; } = 5;
 
+        [Range(0, 10)]
+        public int MaxAbsenceLimitPractical { get; set; }
+
+        [Range(0, 10)]
+        public int MaxAbsenceLimitTheoretical { get; set; }
+
         // Calculated property
         [NotMapped]
         public int CalculatedTotalHours => PracticalHours + TheoreticalHours;
+
+        public int fullAttendance { get; set; } = 14;
 
         // 🔁 Relationships
         public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();

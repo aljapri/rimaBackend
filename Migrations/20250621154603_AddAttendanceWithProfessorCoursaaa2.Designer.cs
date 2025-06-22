@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using kalamon_University.Data;
 
@@ -11,9 +12,11 @@ using kalamon_University.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250621154603_AddAttendanceWithProfessorCoursaaa2")]
+    partial class AddAttendanceWithProfessorCoursaaa2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,19 +55,19 @@ namespace WebApplication2.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("a203d2d5-cb94-47e0-a192-85cee9d4ca09"),
+                            Id = new Guid("da19b9c8-04c7-417e-ba76-c62f78910662"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("c79c89d1-ca65-47ae-b2ae-8ddabb42ab1a"),
+                            Id = new Guid("75c9fd8c-a414-48d4-835b-945c1b9a1642"),
                             Name = "Professor",
                             NormalizedName = "PROFESSOR"
                         },
                         new
                         {
-                            Id = new Guid("a86edea9-5fcf-4bd6-866c-d1f92b121cfe"),
+                            Id = new Guid("63afb3ac-5ba0-4ee7-91aa-52cb38212412"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         });

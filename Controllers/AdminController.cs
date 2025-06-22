@@ -250,7 +250,10 @@ namespace kalamon_University.Controllers
                 PracticalHours = dto.PracticalHours,
                 TheoreticalHours = dto.TheoreticalHours,
                 TotalHours = dto.TotalHours,
-                MaxAbsenceLimit = dto.MaxAbsenceLimit
+                MaxAbsenceLimit = dto.MaxAbsenceLimit,
+                MaxAbsenceLimitPractical = dto.MaxAbsenceLimitPractical,
+                MaxAbsenceLimitTheoretical = dto.MaxAbsenceLimitTheoretical,
+                fullAttendance = dto.FullAttendance
             };
 
             await _context.Courses.AddAsync(course);
@@ -258,6 +261,8 @@ namespace kalamon_University.Controllers
 
             return Ok(course);
         }
+
+
         [HttpPut("update-course/{id}")]
         public async Task<IActionResult> UpdateCourse(int id, [FromBody] UpdateCourseDto dto)
         {
@@ -268,17 +273,21 @@ namespace kalamon_University.Controllers
             if (course == null)
                 return NotFound("Course not found.");
 
-            course.Name = dto.Name;
+            course.Name = dto.Name.Trim();
             course.PracticalHours = dto.PracticalHours;
             course.TheoreticalHours = dto.TheoreticalHours;
             course.TotalHours = dto.TotalHours;
             course.MaxAbsenceLimit = dto.MaxAbsenceLimit;
+            course.MaxAbsenceLimitPractical = dto.MaxAbsenceLimitPractical;
+            course.MaxAbsenceLimitTheoretical = dto.MaxAbsenceLimitTheoretical;
+            course.fullAttendance = dto.FullAttendance;
 
             _context.Courses.Update(course);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
         [HttpDelete("delete-course/{id}")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
@@ -374,6 +383,9 @@ namespace kalamon_University.Controllers
                 c.TheoreticalHours,
                 c.TotalHours,
                 c.MaxAbsenceLimit,
+                c.MaxAbsenceLimitPractical,
+                c.MaxAbsenceLimitTheoretical,
+                c.fullAttendance,
                 Professors = c.ProfessorCourses.Select(pc => new
                 {
                     pc.Professor.UserId,
@@ -384,6 +396,7 @@ namespace kalamon_University.Controllers
 
             return Ok(result);
         }
+
 
 
 
@@ -400,7 +413,10 @@ namespace kalamon_University.Controllers
                     PracticalHours = pc.Course.PracticalHours,
                     TheoreticalHours = pc.Course.TheoreticalHours,
                     TotalHours = pc.Course.TotalHours,
-                    MaxAbsenceLimit = pc.Course.MaxAbsenceLimit
+                    MaxAbsenceLimit = pc.Course.MaxAbsenceLimit,
+                    MaxAbsenceLimitPractical = pc.Course.MaxAbsenceLimitPractical,
+                    MaxAbsenceLimitTheoretical = pc.Course.MaxAbsenceLimitTheoretical,
+                    FullAttendance = pc.Course.fullAttendance
                 })
                 .ToListAsync();
 
@@ -409,6 +425,7 @@ namespace kalamon_University.Controllers
 
             return Ok(courses);
         }
+
 
     }
 
@@ -426,6 +443,9 @@ namespace kalamon_University.Controllers
         public int TheoreticalHours { get; set; }
         public int TotalHours { get; set; }
         public int MaxAbsenceLimit { get; set; }
+        public int MaxAbsenceLimitPractical { get; set; }
+        public int MaxAbsenceLimitTheoretical { get; set; }
+        public int FullAttendance { get; set; } = 14;
     }
 
     public class UpdateCourseDto : CreateCourseDto { }

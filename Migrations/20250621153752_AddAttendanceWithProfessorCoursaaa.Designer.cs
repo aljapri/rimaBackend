@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using kalamon_University.Data;
 
@@ -11,9 +12,11 @@ using kalamon_University.Data;
 namespace WebApplication2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250621153752_AddAttendanceWithProfessorCoursaaa")]
+    partial class AddAttendanceWithProfessorCoursaaa
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,19 +55,19 @@ namespace WebApplication2.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("a203d2d5-cb94-47e0-a192-85cee9d4ca09"),
+                            Id = new Guid("050b7e13-0288-4efd-b769-83860564700f"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("c79c89d1-ca65-47ae-b2ae-8ddabb42ab1a"),
+                            Id = new Guid("1ddbe30e-f7b6-46c6-9ac6-354700608abb"),
                             Name = "Professor",
                             NormalizedName = "PROFESSOR"
                         },
                         new
                         {
-                            Id = new Guid("a86edea9-5fcf-4bd6-866c-d1f92b121cfe"),
+                            Id = new Guid("5e433dc4-b3d9-4278-830c-016f69231d54"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         });
@@ -226,12 +229,6 @@ namespace WebApplication2.Migrations
                     b.Property<int>("MaxAbsenceLimit")
                         .HasColumnType("int");
 
-                    b.Property<int>("MaxAbsenceLimitPractical")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaxAbsenceLimitTheoretical")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -244,9 +241,6 @@ namespace WebApplication2.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("TotalHours")
-                        .HasColumnType("int");
-
-                    b.Property<int>("fullAttendance")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -362,6 +356,9 @@ namespace WebApplication2.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("TheoreticalN")
+                        .HasColumnType("int");
+
+                    b.Property<int>("fullAttendance")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
