@@ -150,12 +150,24 @@ namespace kalamon_University.Controllers
         [HttpDelete("delete-professor/{professorId}")]
         public async Task<IActionResult> DeleteProfessor(Guid professorId)
         {
-            var result = await _professorService.DeleteAsync(professorId);
-            if (!result)
-                return NotFound("الأستاذ غير موجود أو لا يمكن حذفه.");
+            try
+            {
+                var result = await _professorService.DeleteAsync(professorId);
 
-            return Ok("تم حذف الأستاذ بنجاح.");
+                if (!result)
+                {
+                    return NotFound("الأستاذ غير موجود أو لا يمكن حذفه.");
+                }
+
+                return Ok("تم حذف الأستاذ بنجاح.");
+            }
+            catch (Exception ex)
+            {
+                // You can also log the error using a logging framework like Serilog or ILogger
+                return StatusCode(500, $"الدكتور مسجل في كورس");
+            }
         }
+
         [HttpGet("professor/{professorId}/professor-courses")]
         public async Task<IActionResult> GetProfessorCourses(Guid professorId)
         {
@@ -228,16 +240,29 @@ namespace kalamon_University.Controllers
 
             return NoContent(); // 204 No Content - success with no data return
         }
-
         [HttpDelete("delete-student/{studentId}")]
         public async Task<IActionResult> DeleteStudent(Guid studentId)
         {
-            var result = await _studentService.DeleteAsync(studentId);
-            if (!result)
-                return NotFound("الطالب غير موجود أو لا يمكن حذفه.");
+            try
+            {
+                var result = await _studentService.DeleteAsync(studentId);
 
-            return Ok("تم حذف الطالب بنجاح.");
+                if (!result)
+                {
+                    return NotFound("الطالب غير موجود أو لا يمكن حذفه.");
+                }
+
+                return Ok("تم حذف الطالب بنجاح.");
+            }
+            catch (Exception ex)
+            {
+                // Log the error (optional but recommended)
+                // _logger.LogError(ex, "Error occurred while deleting student with ID {StudentId}", studentId);
+
+                return StatusCode(500, $"الطالب مسجل في كورس");
+            }
         }
+
         [HttpPost("add-course")]
         public async Task<IActionResult> AddCourse([FromBody] CreateCourseDto dto)
         {
